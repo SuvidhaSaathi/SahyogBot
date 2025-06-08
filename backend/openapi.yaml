@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: SahyogBot API
+  version: 1.0.0
+  description: |
+    API for SahyogBot, a government scheme recommender chatbot using LangChain, IBM watsonx.ai, and ChromaDB.
+    
+    This API supports profile-driven queries and returns markdown answers and a PDF output link for the top scheme.
+servers:
+  - url: http://localhost:8000
+paths:
+  /query:
+    post:
+      summary: Query for government scheme recommendations
+      description: |
+        Submit a question and user profile to get a markdown-formatted answer and a PDF for the top scheme.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  example: What schemes are available for girls in UP?
+                age:
+                  type: integer
+                  example: 18
+                state:
+                  type: string
+                  example: Uttar Pradesh
+                district:
+                  type: string
+                  example: Lucknow
+                gender:
+                  type: string
+                  example: female
+                family_income:
+                  type: number
+                  example: 200000
+              required:
+                - query
+      responses:
+        '200':
+          description: Successful response with markdown answer and PDF link
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  answer:
+                    type: string
+                    description: Markdown-formatted answer from IBM watsonx.ai
+                  pdf_url:
+                    type: string
+                    description: URL to download the auto-filled PDF for the top scheme
+        '400':
+          description: Invalid input
+        '500':
+          description: Internal server error 
