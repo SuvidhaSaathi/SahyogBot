@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SahyogBot Chat</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      background: #f7f8fa;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      background: #eef3fc;
+      padding: 32px 0 16px 0;
+      text-align: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .header .logo {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #2563eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .header .logo img {
+      width: 28px;
+      height: 20px;
+      vertical-align: middle;
+    }
+    .header .subtitle {
+      color: #4b5563;
+      font-size: 1.1rem;
+      margin-top: 4px;
+    }
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+    .chat-card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      margin-top: 32px;
+      margin-bottom: 24px;
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      min-height: 200px;
+      padding: 0;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 24px 16px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      background: #fff;
+      border-radius: 16px 16px 0 0;
+    }
+    .msg-row { display: flex; }
+    .msg-user {
+      margin-left: auto;
+      background: #e0e7ff;
+      color: #3730a3;
+      border-radius: 16px 16px 4px 16px;
+      padding: 14px 18px;
+      max-width: 80%;
+      word-break: break-word;
+      font-size: 15px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      font-weight: 500;
+    }
+    .msg-bot {
+      margin-right: auto;
+      background: #fff;
+      color: #222;
+      border-radius: 16px 16px 16px 4px;
+      padding: 14px 18px;
+      max-width: 80%;
+      word-break: break-word;
+      font-size: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      border: 1px solid #e5e7eb;
+    }
+    .msg-bot .timestamp, .msg-user .timestamp {
+      display: block;
+      color: #9ca3af;
+      font-size: 12px;
+      margin-top: 8px;
+      text-align: right;
+      font-weight: 400;
+    }
+    .msg-bot a, .msg-user a {
+      color: #2563eb;
+      text-decoration: underline;
+    }
+    .msg-bot h1, .msg-user h1,
+.msg-bot h2, .msg-user h2,
+.msg-bot h3, .msg-user h3,
+.msg-bot h4, .msg-user h4 {
+  font-weight: bold;
+  margin: 0.5em 0 0.3em 0;
+  font-size: 1em;
+  color: #222;
+}
+
+.msg-bot ul, .msg-user ul,
+.msg-bot ol, .msg-user ol {
+  margin: 0.5em 0 0.5em 1.2em;
+  padding-left: 1.2em;
+}
+
+.msg-bot li, .msg-user li {
+  margin-bottom: 0.3em;
+  list-style: disc inside;
+}
+
+.msg-bot p, .msg-user p {
+  margin: 0.3em 0;
+}
+
+.msg-bot a, .msg-user a {
+  color: #2563eb;
+  text-decoration: underline;
+  word-break: break-all;
+}
+    .thinking {
+      color: #555;
+      font-size: 15px;
+      background: #f3f4f6;
+      border-radius: 16px 16px 16px 4px;
+      padding: 14px 18px;
+      max-width: 80%;
+      margin-right: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-style: italic;
+      animation: pulse 1.2s infinite;
+      border: 1px solid #e5e7eb;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    .chat-input-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #fff;
+      border-radius: 0 0 16px 16px;
+      border-top: 1px solid #e5e7eb;
+      padding: 18px 20px 18px 20px;
+      box-shadow: 0 -1px 4px rgba(0,0,0,0.02);
+    }
+    .chat-input-bar input {
+      flex: 1;
+      border: none;
+      background: #f3f4f6;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 15px;
+      outline: none;
+      transition: box-shadow 0.2s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .chat-input-bar input:focus {
+      box-shadow: 0 0 0 2px #a5b4fc;
+    }
+    .chat-input-bar button {
+      background: #a5b4fc;
+      color: #3730a3;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .chat-input-bar button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .footer {
+      text-align: center;
+      color: #6b7280;
+      font-size: 14px;
+      margin: 32px 0 12px 0;
+    }
+    .footer .ibm {
+      color: #2563eb;
+      font-weight: 500;
+      text-decoration: underline;
+    }
+    @media (max-width: 600px) {
+      .chat-card { max-width: 100vw; border-radius: 0; }
+      .main { padding: 0; }
+      .chat-messages { padding: 16px 4vw 8px 4vw; }
+      .chat-input-bar { padding: 12px 4vw; }
+    }
+    .onboarding-bar { display: flex; flex-direction: column; align-items: center; margin-bottom: 12px; }
+    .quick-replies { display: flex; gap: 8px; margin-top: 8px; }
+    .quick-reply-btn { background: #e0e7ff; color: #3730a3; border: none; border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 0.98em; }
+    .quick-reply-btn:hover { background: #a5b4fc; }
+    .feedback-bar { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+    .feedback-btn { background: none; border: none; font-size: 1.2em; cursor: pointer; }
+    .feedback-btn.selected { color: #2563eb; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <img src="https://upload.wikimedia.org/wikipedia/en/4/41/Flag_of_India.svg" alt="India flag" />
+      SahyogBot
+    </div>
+    <div class="subtitle">Your AI Guide for Government Schemes</div>
+  </div>
+  <div class="main">
+    <div class="chat-card">
+      <div class="chat-messages" id="chat-messages"></div>
+      <form class="chat-input-bar" id="chat-form" autocomplete="off" style="display:none;">
+        <input type="text" id="chat-input" placeholder="Type your question..." autocomplete="off" />
+        <button type="submit" id="send-btn"><i class="fa fa-paper-plane"></i></button>
+      </form>
+    </div>
+  </div>
+  <div class="footer">
+    Powered by <span class="ibm">IBM Watsonx.ai</span><br />
+    <span style="font-size:12px;">Serving citizens with reliable government information</span>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+  <script>
+    const API_URL = 'http://localhost:8000/query';
+    const chatMessages = document.getElementById('chat-messages');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    let loading = false;
+    let onboardingStep = 0;
+    let userProfile = {};
+    let onboardingActive = true;
+    const onboardingSteps = [
+      { key: 'age', question: "Hi! 👋 How old are you?", type: 'number', min: 1, max: 120 },
+      { key: 'gender', question: "What is your gender?", type: 'select', options: ["Female", "Male", "Other", "Prefer not to say"] },
+      { key: 'state', question: "Which state do you live in?", type: 'text' },
+      { key: 'district', question: "And your district?", type: 'text' },
+      { key: 'family_income', question: "What is your family's annual income? (You can skip this)", type: 'number', optional: true }
+    ];
+
+    function scrollToBottom() {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function appendMessage(text, sender, isMarkdown = false, timestamp = null, extra = null) {
+      const row = document.createElement('div');
+      row.className = 'msg-row';
+      const msg = document.createElement('div');
+      msg.className = sender === 'user' ? 'msg-user' : 'msg-bot';
+      if (isMarkdown) {
+        msg.innerHTML = DOMPurify.sanitize(marked.parse(text));
+      } else {
+        msg.textContent = text;
+      }
+      // Add timestamp
+      const ts = document.createElement('span');
+      ts.className = 'timestamp';
+      ts.textContent = timestamp || getTimeString();
+      msg.appendChild(ts);
+      row.appendChild(msg);
+      if (extra) row.appendChild(extra);
+      chatMessages.appendChild(row);
+      scrollToBottom();
+    }
+
+    function appendThinking() {
+      const row = document.createElement('div');
+      row.className = 'msg-row thinking-row';
+      const msg = document.createElement('div');
+      msg.className = 'thinking';
+      msg.innerHTML = '<i class="fa fa-spinner fa-spin"></i> SahyogBot is typing...';
+      row.appendChild(msg);
+      row.id = 'thinking-row';
+      chatMessages.appendChild(row);
+      scrollToBottom();
+    }
+
+    function removeThinking() {
+      const row = document.getElementById('thinking-row');
+      if (row) row.remove();
+    }
+
+    function getTimeString() {
+      const now = new Date();
+      let h = now.getHours();
+      let m = now.getMinutes();
+      if (h < 10) h = '0' + h;
+      if (m < 10) m = '0' + m;
+      return `${h}:${m}`;
+    }
+
+    // Conversational Onboarding
+    function startOnboarding() {
+      onboardingActive = true;
+      onboardingStep = 0;
+      userProfile = {};
+      chatForm.style.display = 'none';
+      nextOnboardingStep();
+    }
+
+    function nextOnboardingStep() {
+      if (onboardingStep < onboardingSteps.length) {
+        const step = onboardingSteps[onboardingStep];
+        appendMessage(step.question, 'bot', false);
+        showOnboardingInput(step);
+      } else {
+        onboardingActive = false;
+        appendMessage("Thanks! I'll use this info to recommend the best schemes for you. You can now ask me anything about government schemes.", 'bot', false);
+        chatForm.style.display = '';
+        chatInput.focus();
+      }
+    }
+
+    function showOnboardingInput(step) {
+      // Remove any previous onboarding input
+      let prev = document.getElementById('onboarding-input');
+      if (prev) prev.remove();
+      const inputRow = document.createElement('div');
+      inputRow.className = 'onboarding-bar';
+      inputRow.id = 'onboarding-input';
+      let input;
+      if (step.type === 'select') {
+        input = document.createElement('select');
+        input.style.marginTop = '8px';
+        step.options.forEach(opt => {
+          const o = document.createElement('option');
+          o.value = opt;
+          o.textContent = opt;
+          input.appendChild(o);
+        });
+      } else {
+        input = document.createElement('input');
+        input.type = step.type;
+        if (step.min) input.min = step.min;
+        if (step.max) input.max = step.max;
+        input.placeholder = step.optional ? '(Optional)' : '';
+        input.style.marginTop = '8px';
+      }
+      input.autofocus = true;
+      inputRow.appendChild(input);
+      const btn = document.createElement('button');
+      btn.textContent = 'Next';
+      btn.style.marginTop = '8px';
+      btn.onclick = function(e) {
+        e.preventDefault();
+        let val = input.value;
+        if (!step.optional && !val) {
+          input.focus();
+          return;
+        }
+        userProfile[step.key] = val;
+        appendMessage(val || '(Skipped)', 'user', false);
+        inputRow.remove();
+        onboardingStep++;
+        setTimeout(nextOnboardingStep, 400);
+      };
+      inputRow.appendChild(btn);
+      chatMessages.appendChild(inputRow);
+      input.focus();
+      scrollToBottom();
+    }
+
+    // Quick Replies
+    function showQuickReplies() {
+      let qr = document.getElementById('quick-replies');
+      if (qr) qr.remove();
+      qr = document.createElement('div');
+      qr.className = 'quick-replies';
+      qr.id = 'quick-replies';
+      [
+        { label: 'Show more schemes', value: 'Show me more schemes' },
+        { label: 'How to apply', value: 'How do I apply?' },
+        { label: 'Start over', value: 'Restart onboarding' }
+      ].forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'quick-reply-btn';
+        btn.textContent = opt.label;
+        btn.onclick = function() {
+          qr.remove();
+          if (opt.value === 'Restart onboarding') {
+            startOnboarding();
+          } else {
+            chatInput.value = opt.value;
+            chatForm.dispatchEvent(new Event('submit', { cancelable: true }));
+          }
+        };
+        qr.appendChild(btn);
+      });
+      chatMessages.appendChild(qr);
+      scrollToBottom();
+    }
+
+    // Feedback
+    function showFeedbackBar() {
+      let fb = document.getElementById('feedback-bar');
+      if (fb) fb.remove();
+      fb = document.createElement('div');
+      fb.className = 'feedback-bar';
+      fb.id = 'feedback-bar';
+      fb.innerHTML = '<span>Was this helpful?</span>';
+      const yesBtn = document.createElement('button');
+      yesBtn.className = 'feedback-btn';
+      yesBtn.innerHTML = '👍';
+      yesBtn.onclick = function() {
+        yesBtn.classList.add('selected');
+        fb.innerHTML = '<span>Thank you for your feedback!</span>';
+        // Optionally send feedback to backend
+      };
+      const noBtn = document.createElement('button');
+      noBtn.className = 'feedback-btn';
+      noBtn.innerHTML = '👎';
+      noBtn.onclick = function() {
+        noBtn.classList.add('selected');
+        fb.innerHTML = '<span>Thank you for your feedback!</span>';
+        // Optionally send feedback to backend
+      };
+      fb.appendChild(yesBtn);
+      fb.appendChild(noBtn);
+      chatMessages.appendChild(fb);
+      scrollToBottom();
+    }
+
+    // Chat logic
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (loading || onboardingActive) return;
+      const question = chatInput.value.trim();
+      if (!question.trim()) {
+        alert("Please enter a question.");
+        return;
+      }
+      appendMessage(question, 'user', false);
+      chatInput.value = '';
+      loading = true;
+      sendBtn.disabled = true;
+      chatInput.disabled = true;
+      appendThinking();
+      try {
+        const payload = {
+          query: question,
+          ...userProfile
+        };
+        await new Promise(r => setTimeout(r, 700)); // Simulate typing delay
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        removeThinking();
+        let answer = '';
+        if (typeof data.answer === 'string' && data.answer.trim()) {
+          answer = data.answer.trim();
+        } else if (
+          data.choices &&
+          Array.isArray(data.choices) &&
+          data.choices[0] &&
+          data.choices[0].message &&
+          typeof data.choices[0].message.content === 'string'
+        ) {
+          answer = data.choices[0].message.content.trim();
+        } else {
+          answer = 'No answer received.';
+        }
+        answer += '<br><div style="font-size:11px;color:#888;margin-top:8px;">Generated by IBM watsonx.ai</div>';
+        answer += '<br><em>Would you like to know about more schemes or how to apply?</em>';
+        appendMessage(answer, 'bot', true);
+        if (data.pdf_url) {
+          appendMessage('<a href="' + data.pdf_url + '" target="_blank">Download Scheme PDF</a>', 'bot', true);
+        }
+        showQuickReplies();
+        showFeedbackBar();
+      } catch (err) {
+        removeThinking();
+        appendMessage('Error: Could not fetch answer.', 'bot', false);
+      } finally {
+        loading = false;
+        sendBtn.disabled = false;
+        chatInput.disabled = false;
+        chatInput.focus();
+      }
+    });
+
+    // Start onboarding on load
+    window.onload = startOnboarding;
+  </script>
+</body>
+</html> 

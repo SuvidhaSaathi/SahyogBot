@@ -1,8 +1,9 @@
 fastapi
 uvicorn
 langchain
-openai
 chromadb
 python-dotenv
 pypdf
-tiktoken 
+sentence-transformers
+requests
+fpdf 

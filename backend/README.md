@@ -1,31 +1,72 @@
-SahyogBot Backend
-A FastAPI backend that uses LangChain and currently OpenAI to provide government scheme recommendations based on PDF documents.
-Features
-FastAPI server with a single /query POST endpoint.
-Retrieval-Augmented Generation (RAG) pipeline using LangChain.
-PDF ingestion: Place government scheme PDFs in the docs/ folder.
-Document chunking and OpenAI embeddings.
-ChromaDB for local vector storage (vector_store/).
-Environment variable support for API keys via .env.
-Production-safe and modular code.
-Project Structure
-Apply to .gitignore
-Setup Instructions
-Clone the repository and navigate to the backend directory:
-Apply to .gitignore
-Install dependencies:
-Apply to .gitignore
-Add your OpenAI API key to a .env file:
-Apply to .gitignore
-Add your government scheme PDFs to the docs/ folder.
-Run the FastAPI server:
-Apply to .gitignore
-API Usage
-POST /query
-Request Body:
-Apply to .gitignore
+# SahyogBot Backend
+
+A modular FastAPI backend for government scheme recommendations using LangChain, IBM watsonx.ai, and ChromaDB.
+
+## Features
+- Modular FastAPI app (core, routes, services, models, utils)
+- Onboarding: collects age, state, district, gender, family income
+- Profile-driven prompts for better recommendations
+- PDF output for top scheme
+- Markdown+HTML+PDF formatting
+- Request logging
+- CORS restriction
+- Caching for repeated queries
+
+## Project Structure
+```
+backend/
+  app/
+    __init__.py
+    main.py
+    core/
+      config.py
+      ibm.py
+      vectorstore.py
+    routes/
+      query.py
+    services/
+      scheme.py
+      pdfgen.py
+    models/
+      request.py
+      response.py
+    utils/
+      logger.py
+      cache.py
+  docs/
+  vector_store/
+  logs.txt
+  requirements.txt
+  .env
+```
+
+## Setup
+1. `pip install -r requirements.txt`
+2. Add your IBM credentials to `.env`
+3. Place scheme PDFs in `docs/`
+4. `uvicorn app.main:app --reload`
+
+## API Usage
+POST `/query` with JSON:
+```
+{
+  "query": "What schemes for girls in UP?",
+  "age": 18,
+  "state": "Uttar Pradesh",
+  "district": "Lucknow",
+  "gender": "female",
+  "family_income": 200000
+}
+```
+
 Response:
-Apply to .gitignore
+```
+{
+  "answer": "...markdown...",
+  "pdf_url": "/static/scheme.pdf"
+}
+```
+
 How it Works
 main.py:
 Defines the FastAPI app and /query endpoint. Receives a user query and calls the LangChain pipeline.
