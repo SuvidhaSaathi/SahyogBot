@@ -1,103 +1,19 @@
-# SahyogBot: Simplifying Access to Government Schemes Through AI
+# SahyogBot Backend
 
-## Our Mission
-We introduce **SahyogBot** — an AI-driven assistant dedicated to bridging the gap between citizens and public welfare, with a special focus on empowering students, parents, and underserved communities through accessible, personalized support.
+A modular FastAPI backend for government scheme recommendations using LangChain, IBM watsonx.ai, and ChromaDB.
 
----
+## Features
+- Modular FastAPI app (core, routes, services, models, utils)
+- Onboarding: collects age, state, district, gender, family income
+- Profile-driven prompts for better recommendations
+- PDF output for top scheme
+- Markdown+HTML+PDF formatting
+- Request logging
+- CORS restriction
+- Caching for repeated queries
 
-## Team Name
-**SuvidhaSaathi**
-
-## Problem Statement
-**AI-Powered chatbot for government schemes and financial aid**
-
-## Project Title
-**SahyogBot**
-
----
-
-## Brief Project Description
-
-**SahyogBot** is a modular, AI-powered backend system that helps citizens discover government schemes tailored to their profile. Using user attributes (age, gender, location, income), it queries indexed scheme documents and returns a personalized recommendation with a downloadable PDF summary. It uses LangChain and IBM watsonx.ai for LLM interaction and ChromaDB for vector-based retrieval.
-
----
-
-## Technologies Used
-
-- **FastAPI** – backend framework  
-- **LangChain** – LLM prompt chaining and document QA  
-- **IBM watsonx.ai** – LLM model provider  
-- **ChromaDB** – vector store for semantic search  
-- **PyMuPDF (fitz)** – PDF parsing and generation  
-- **Markdown2** – markdown formatting  
-- **Uvicorn** – ASGI server  
-- **Python** – core language  
-
----
-
-## Setup & Run Instructions
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/SuvidhaSathi/SahyogBot.git
-   cd SahyogBot
-   ```
-2. Install required dependencies:
-
-```bash
-pip install -r requirements.txt
+## Project Structure
 ```
-3. Configure your environment:
-
-- Create a .env file with:
-```bash
-IBM_WATSON_API_KEY=your_key
-IBM_MODEL_ID=meta-llama/llama-3-70b-instruct
-```
-4. Add scheme PDFs into the docs/ folder.
-
-4. Run the backend:
-
-```bash
-uvicorn app.main:app --reload
-```
-### System Design Diagram
-<p align="center">
-  <img src="assets/system_design.png" alt="System Design" width="600"/>
-</p>
-
-### API Usage
-Endpoint: POST /query
-
-- Sample request body:
-
-```json
-{
-  "query": "What schemes for girls in UP?",
-  "age": 18,
-  "state": "Uttar Pradesh",
-  "district": "Lucknow",
-  "gender": "female",
-  "family_income": 200000
-}
-```
-- Sample response:
-
-```json
-{
-  "answer": "...markdown-formatted answer...",
-  "pdf_url": "/static/scheme.pdf"
-}
-```
-### How It Works
-- main.py initializes the FastAPI app and defines the /query endpoint.
-- PDFs from the docs/ folder are loaded and split into chunks.
-- LangChain generates vector embeddings and stores them in ChromaDB.
-- RetrievalQA fetches relevant chunks and generates an LLM-based answer.
-- The final answer is formatted in Markdown and converted to a PDF.
-
-### Project Structure
-```bash
 backend/
   app/
     __init__.py
@@ -122,16 +38,48 @@ backend/
   logs.txt
   requirements.txt
   .env
-  ```
-### Notes
-- The docs/ folder must contain at least one scheme PDF file.
+```
 
-- Vector index is auto-generated in vector_store/.
+## Setup
+1. `pip install -r requirements.txt`
+2. Add your IBM credentials to `.env`
+3. Place scheme PDFs in `docs/`
+4. `uvicorn app.main:app --reload`
 
-- A valid .env file is required to access IBM watsonx.ai API.
+## API Usage
+POST `/query` with JSON:
+```
+{
+  "query": "What schemes for girls in UP?",
+  "age": 18,
+  "state": "Uttar Pradesh",
+  "district": "Lucknow",
+  "gender": "female",
+  "family_income": 200000
+}
+```
 
-- Sensitive data is protected via .gitignore.
+Response:
+```
+{
+  "answer": "...markdown...",
+  "pdf_url": "/static/scheme.pdf"
+}
+```
 
-## Demo Video
-📽️ Watch Demo
-(Please replace with your actual video URL)
+How it Works
+main.py:
+Defines the FastAPI app and /query endpoint. Receives a user query and calls the LangChain pipeline.
+langchain_agent.py:
+Loads all PDFs from docs/.
+Splits documents into chunks.
+Embeds chunks using OpenAI embeddings.
+Stores/loads vectors in ChromaDB (vector_store/).
+Uses RetrievalQA to answer queries based on the most relevant document chunks.
+requirements.txt:
+Lists all required Python packages, including FastAPI, LangChain, OpenAI, ChromaDB, and PDF support.
+Notes
+The backend will not work if the docs/ folder is empty. Add at least one PDF.
+The vector index is automatically created and persisted in vector_store/.
+The .env file is required for your Watson API key.
+.gitignore ensures sensitive and unnecessary files are not committed.
