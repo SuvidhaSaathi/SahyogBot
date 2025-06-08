@@ -61,11 +61,6 @@ IBM_MODEL_ID=meta-llama/llama-3-70b-instruct
 ```bash
 uvicorn app.main:app --reload
 ```
-### System Design Diagram
-<p align="center">
-  <img src="assets/system_design.png" alt="System Design" width="600"/>
-</p>
-
 ### API Usage
 Endpoint: POST /query
 
@@ -91,9 +86,13 @@ Endpoint: POST /query
 ```
 ### How It Works
 - main.py initializes the FastAPI app and defines the /query endpoint.
+
 - PDFs from the docs/ folder are loaded and split into chunks.
+
 - LangChain generates vector embeddings and stores them in ChromaDB.
+
 - RetrievalQA fetches relevant chunks and generates an LLM-based answer.
+
 - The final answer is formatted in Markdown and converted to a PDF.
 
 ### Project Structure
