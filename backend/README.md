@@ -81,5 +81,5 @@ Lists all required Python packages, including FastAPI, LangChain, OpenAI, Chroma
 Notes
 The backend will not work if the docs/ folder is empty. Add at least one PDF.
 The vector index is automatically created and persisted in vector_store/.
-The .env file is required for your Watson API key.
+The .env file is required for your OpenAI API key.
 .gitignore ensures sensitive and unnecessary files are not committed.

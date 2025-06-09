@@ -4,6 +4,6 @@ langchain
 chromadb
 python-dotenv
 pypdf
-sentence-transformers
+sentence-transformers 
 requests
 fpdf 

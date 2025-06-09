@@ -216,13 +216,6 @@
       .chat-messages { padding: 16px 4vw 8px 4vw; }
       .chat-input-bar { padding: 12px 4vw; }
     }
-    .onboarding-bar { display: flex; flex-direction: column; align-items: center; margin-bottom: 12px; }
-    .quick-replies { display: flex; gap: 8px; margin-top: 8px; }
-    .quick-reply-btn { background: #e0e7ff; color: #3730a3; border: none; border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 0.98em; }
-    .quick-reply-btn:hover { background: #a5b4fc; }
-    .feedback-bar { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
-    .feedback-btn { background: none; border: none; font-size: 1.2em; cursor: pointer; }
-    .feedback-btn.selected { color: #2563eb; }
   </style>
 </head>
 <body>
@@ -234,10 +227,20 @@
     <div class="subtitle">Your AI Guide for Government Schemes</div>
   </div>
   <div class="main">
+    <div class="profile-bar" style="display:flex;gap:10px;align-items:center;justify-content:center;margin-bottom:8px;">
+      <select id="profile-gender">
+        <option value="">Gender</option>
+        <option value="female">Female</option>
+        <option value="male">Male</option>
+        <option value="other">Other</option>
+      </select>
+      <input id="profile-state" type="text" placeholder="State" style="width:90px;">
+      <input id="profile-income" type="number" placeholder="Income" style="width:90px;">
+    </div>
     <div class="chat-card">
       <div class="chat-messages" id="chat-messages"></div>
-      <form class="chat-input-bar" id="chat-form" autocomplete="off" style="display:none;">
-        <input type="text" id="chat-input" placeholder="Type your question..." autocomplete="off" />
+      <form class="chat-input-bar" id="chat-form" autocomplete="off">
+        <input type="text" id="chat-input" placeholder="Ask about scholarships, schemes, or yojanas..." autocomplete="off" />
         <button type="submit" id="send-btn"><i class="fa fa-paper-plane"></i></button>
       </form>
     </div>
@@ -255,22 +258,17 @@
     const chatInput = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
     let loading = false;
-    let onboardingStep = 0;
-    let userProfile = {};
-    let onboardingActive = true;
-    const onboardingSteps = [
-      { key: 'age', question: "Hi! 👋 How old are you?", type: 'number', min: 1, max: 120 },
-      { key: 'gender', question: "What is your gender?", type: 'select', options: ["Female", "Male", "Other", "Prefer not to say"] },
-      { key: 'state', question: "Which state do you live in?", type: 'text' },
-      { key: 'district', question: "And your district?", type: 'text' },
-      { key: 'family_income', question: "What is your family's annual income? (You can skip this)", type: 'number', optional: true }
-    ];
 
-    function scrollToBottom() {
-      chatMessages.scrollTop = chatMessages.scrollHeight;
+    function getTimeString() {
+      const now = new Date();
+      let h = now.getHours();
+      let m = now.getMinutes();
+      if (h < 10) h = '0' + h;
+      if (m < 10) m = '0' + m;
+      return `${h}:${m}`;
     }
 
-    function appendMessage(text, sender, isMarkdown = false, timestamp = null, extra = null) {
+    function appendMessage(text, sender, isMarkdown = false, timestamp = null) {
       const row = document.createElement('div');
       row.className = 'msg-row';
       const msg = document.createElement('div');
@@ -286,9 +284,8 @@
       ts.textContent = timestamp || getTimeString();
       msg.appendChild(ts);
       row.appendChild(msg);
-      if (extra) row.appendChild(extra);
       chatMessages.appendChild(row);
-      scrollToBottom();
+      chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     function appendThinking() {
@@ -308,150 +305,13 @@
       if (row) row.remove();
     }
 
-    function getTimeString() {
-      const now = new Date();
-      let h = now.getHours();
-      let m = now.getMinutes();
-      if (h < 10) h = '0' + h;
-      if (m < 10) m = '0' + m;
-      return `${h}:${m}`;
+    function scrollToBottom() {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // Conversational Onboarding
-    function startOnboarding() {
-      onboardingActive = true;
-      onboardingStep = 0;
-      userProfile = {};
-      chatForm.style.display = 'none';
-      nextOnboardingStep();
-    }
-
-    function nextOnboardingStep() {
-      if (onboardingStep < onboardingSteps.length) {
-        const step = onboardingSteps[onboardingStep];
-        appendMessage(step.question, 'bot', false);
-        showOnboardingInput(step);
-      } else {
-        onboardingActive = false;
-        appendMessage("Thanks! I'll use this info to recommend the best schemes for you. You can now ask me anything about government schemes.", 'bot', false);
-        chatForm.style.display = '';
-        chatInput.focus();
-      }
-    }
-
-    function showOnboardingInput(step) {
-      // Remove any previous onboarding input
-      let prev = document.getElementById('onboarding-input');
-      if (prev) prev.remove();
-      const inputRow = document.createElement('div');
-      inputRow.className = 'onboarding-bar';
-      inputRow.id = 'onboarding-input';
-      let input;
-      if (step.type === 'select') {
-        input = document.createElement('select');
-        input.style.marginTop = '8px';
-        step.options.forEach(opt => {
-          const o = document.createElement('option');
-          o.value = opt;
-          o.textContent = opt;
-          input.appendChild(o);
-        });
-      } else {
-        input = document.createElement('input');
-        input.type = step.type;
-        if (step.min) input.min = step.min;
-        if (step.max) input.max = step.max;
-        input.placeholder = step.optional ? '(Optional)' : '';
-        input.style.marginTop = '8px';
-      }
-      input.autofocus = true;
-      inputRow.appendChild(input);
-      const btn = document.createElement('button');
-      btn.textContent = 'Next';
-      btn.style.marginTop = '8px';
-      btn.onclick = function(e) {
-        e.preventDefault();
-        let val = input.value;
-        if (!step.optional && !val) {
-          input.focus();
-          return;
-        }
-        userProfile[step.key] = val;
-        appendMessage(val || '(Skipped)', 'user', false);
-        inputRow.remove();
-        onboardingStep++;
-        setTimeout(nextOnboardingStep, 400);
-      };
-      inputRow.appendChild(btn);
-      chatMessages.appendChild(inputRow);
-      input.focus();
-      scrollToBottom();
-    }
-
-    // Quick Replies
-    function showQuickReplies() {
-      let qr = document.getElementById('quick-replies');
-      if (qr) qr.remove();
-      qr = document.createElement('div');
-      qr.className = 'quick-replies';
-      qr.id = 'quick-replies';
-      [
-        { label: 'Show more schemes', value: 'Show me more schemes' },
-        { label: 'How to apply', value: 'How do I apply?' },
-        { label: 'Start over', value: 'Restart onboarding' }
-      ].forEach(opt => {
-        const btn = document.createElement('button');
-        btn.className = 'quick-reply-btn';
-        btn.textContent = opt.label;
-        btn.onclick = function() {
-          qr.remove();
-          if (opt.value === 'Restart onboarding') {
-            startOnboarding();
-          } else {
-            chatInput.value = opt.value;
-            chatForm.dispatchEvent(new Event('submit', { cancelable: true }));
-          }
-        };
-        qr.appendChild(btn);
-      });
-      chatMessages.appendChild(qr);
-      scrollToBottom();
-    }
-
-    // Feedback
-    function showFeedbackBar() {
-      let fb = document.getElementById('feedback-bar');
-      if (fb) fb.remove();
-      fb = document.createElement('div');
-      fb.className = 'feedback-bar';
-      fb.id = 'feedback-bar';
-      fb.innerHTML = '<span>Was this helpful?</span>';
-      const yesBtn = document.createElement('button');
-      yesBtn.className = 'feedback-btn';
-      yesBtn.innerHTML = '👍';
-      yesBtn.onclick = function() {
-        yesBtn.classList.add('selected');
-        fb.innerHTML = '<span>Thank you for your feedback!</span>';
-        // Optionally send feedback to backend
-      };
-      const noBtn = document.createElement('button');
-      noBtn.className = 'feedback-btn';
-      noBtn.innerHTML = '👎';
-      noBtn.onclick = function() {
-        noBtn.classList.add('selected');
-        fb.innerHTML = '<span>Thank you for your feedback!</span>';
-        // Optionally send feedback to backend
-      };
-      fb.appendChild(yesBtn);
-      fb.appendChild(noBtn);
-      chatMessages.appendChild(fb);
-      scrollToBottom();
-    }
-
-    // Chat logic
     chatForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (loading || onboardingActive) return;
+      if (loading) return;
       const question = chatInput.value.trim();
       if (!question.trim()) {
         alert("Please enter a question.");
@@ -464,11 +324,16 @@
       chatInput.disabled = true;
       appendThinking();
       try {
+        const gender = document.getElementById('profile-gender').value;
+        const state = document.getElementById('profile-state').value;
+        const income = document.getElementById('profile-income').value;
+
         const payload = {
           query: question,
-          ...userProfile
+          gender,
+          state,
+          income
         };
-        await new Promise(r => setTimeout(r, 700)); // Simulate typing delay
         const res = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -490,14 +355,7 @@
         } else {
           answer = 'No answer received.';
         }
-        answer += '<br><div style="font-size:11px;color:#888;margin-top:8px;">Generated by IBM watsonx.ai</div>';
-        answer += '<br><em>Would you like to know about more schemes or how to apply?</em>';
-        appendMessage(answer, 'bot', true);
-        if (data.pdf_url) {
-          appendMessage('<a href="' + data.pdf_url + '" target="_blank">Download Scheme PDF</a>', 'bot', true);
-        }
-        showQuickReplies();
-        showFeedbackBar();
+        appendMessage(answer + '<br><div style="font-size:11px;color:#888;margin-top:8px;">Generated by IBM watsonx.ai</div>', 'bot', true);
       } catch (err) {
         removeThinking();
         appendMessage('Error: Could not fetch answer.', 'bot', false);
@@ -509,8 +367,7 @@
       }
     });
 
-    // Start onboarding on load
-    window.onload = startOnboarding;
+    chatInput.focus();
   </script>
 </body>
 </html> 

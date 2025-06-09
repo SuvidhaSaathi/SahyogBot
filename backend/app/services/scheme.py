@@ -8,30 +8,14 @@ import re
 
 def parse_scheme_from_markdown(markdown: str):
     scheme = {}
-    # Try strict markdown structure first
-    name = re.search(r"###\s*([\w\s\-]+)", markdown)
+    name = re.search(r"### (.+)", markdown)
     eligibility = re.search(r"\*\*Eligibility:\*\*\s*(.+)", markdown)
     benefits = re.search(r"\*\*Benefits:\*\*\s*(.+)", markdown)
     link = re.search(r"\*\*Apply Link:\*\*\s*(.+)", markdown)
-    # Fallback: Try to extract from bullet points or generic patterns
-    if not name:
-        name = re.search(r"Relevant Government Schemes:\s*\*\s*([\w\s\-]+)", markdown)
-    if not eligibility:
-        eligibility = re.search(r"eligibility criteria[,:]?\s*([^.\n]+)", markdown, re.IGNORECASE)
-    if not benefits:
-        benefits = re.search(r"offers? ([^.\n]+)", markdown, re.IGNORECASE)
-    if not link:
-        link = re.search(r"Official Links?:\s*[-\*]\s*([\w\.:/\-]+)", markdown)
-    if name: scheme["Scheme Name"] = name.group(1).strip()
-    if eligibility: scheme["Eligibility"] = eligibility.group(1).strip()
-    if benefits: scheme["Benefits"] = benefits.group(1).strip()
-    if link: scheme["Apply Link"] = link.group(1).strip()
-    # If nothing parsed, fallback to whole answer
-    if not scheme:
-        scheme["Scheme Name"] = "See Answer"
-        scheme["Eligibility"] = "See Answer"
-        scheme["Benefits"] = "See Answer"
-        scheme["Apply Link"] = "See Answer"
+    if name: scheme["Scheme Name"] = name.group(1)
+    if eligibility: scheme["Eligibility"] = eligibility.group(1)
+    if benefits: scheme["Benefits"] = benefits.group(1)
+    if link: scheme["Apply Link"] = link.group(1)
     return scheme
 
 async def get_scheme_recommendation(request):
