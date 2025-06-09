@@ -7,3 +7,4 @@ pypdf
 sentence-transformers 
 requests
 fpdf 
+langchain-community
