@@ -46,16 +46,39 @@ backend/
 3. Place scheme PDFs in `docs/`
 4. `uvicorn app.main:app --reload`
 
-## Deployment Note
+### API Usage
+Endpoint: POST /query
 
-**To avoid memory issues on low-memory hosts (like Render free tier), always run Uvicorn with a single worker:**
+- Sample request body:
 
+```json
+{
+  "query": "What schemes for girls in UP?",
+  "age": 18,
+  "state": "Uttar Pradesh",
+  "district": "Lucknow",
+  "gender": "female",
+  "family_income": 200000
+}
 ```
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
-```
+- Sample response:
 
-If using Gunicorn, set `--workers 1` as well.
-
-## API Usage
-POST `/query` with JSON:
+```json
+{
+  "answer": "...markdown-formatted answer...",
+  "pdf_url": "/static/scheme.pdf"
+}
 ```
+### How It Works
+- main.py initializes the FastAPI app and defines the /query endpoint.
+- PDFs from the docs/ folder are loaded and split into chunks.
+- LangChain generates vector embeddings and stores them in ChromaDB.
+- RetrievalQA fetches relevant chunks and generates an LLM-based answer.
+- The final answer is formatted in Markdown and converted to a PDF.
+
+
+### Notes
+- The docs/ folder must contain at least one scheme PDF file.
+- Vector index is auto-generated in vector_store/.
+- A valid .env file is required to access IBM watsonx.ai API.
+- Sensitive data is protected via .gitignore.
