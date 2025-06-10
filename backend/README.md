@@ -46,40 +46,16 @@ backend/
 3. Place scheme PDFs in `docs/`
 4. `uvicorn app.main:app --reload`
 
+## Deployment Note
+
+**To avoid memory issues on low-memory hosts (like Render free tier), always run Uvicorn with a single worker:**
+
+```
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
+```
+
+If using Gunicorn, set `--workers 1` as well.
+
 ## API Usage
 POST `/query` with JSON:
 ```
-{
-  "query": "What schemes for girls in UP?",
-  "age": 18,
-  "state": "Uttar Pradesh",
-  "district": "Lucknow",
-  "gender": "female",
-  "family_income": 200000
-}
-```
-
-Response:
-```
-{
-  "answer": "...markdown...",
-  "pdf_url": "/static/scheme.pdf"
-}
-```
-
-How it Works
-main.py:
-Defines the FastAPI app and /query endpoint. Receives a user query and calls the LangChain pipeline.
-langchain_agent.py:
-Loads all PDFs from docs/.
-Splits documents into chunks.
-Embeds chunks using OpenAI embeddings.
-Stores/loads vectors in ChromaDB (vector_store/).
-Uses RetrievalQA to answer queries based on the most relevant document chunks.
-requirements.txt:
-Lists all required Python packages, including FastAPI, LangChain, OpenAI, ChromaDB, and PDF support.
-Notes
-The backend will not work if the docs/ folder is empty. Add at least one PDF.
-The vector index is automatically created and persisted in vector_store/.
-The .env file is required for your OpenAI API key.
-.gitignore ensures sensitive and unnecessary files are not committed.

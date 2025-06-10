@@ -6,6 +6,7 @@ from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddi
 from langchain.vectorstores import Chroma
 import requests
 import gc
+import psutil
 
 load_dotenv()
 IBM_WATSON_API_KEY = os.getenv("IBM_WATSON_API_KEY")
@@ -35,23 +36,27 @@ def get_ibm_iam_token(api_key):
 # Singleton for vector store
 _vector_store = None
 
+def log_memory(stage=""):
+    process = psutil.Process(os.getpid())
+    print(f"[MEMORY] {stage}: {process.memory_info().rss / 1024 / 1024:.2f} MB")
+
 def load_or_create_vector_store():
     global _vector_store
+    log_memory("start load_or_create_vector_store")
     if _vector_store is not None:
+        log_memory("vector_store already loaded")
         return _vector_store
     if not os.path.exists(VECTOR_STORE_PATH):
         os.makedirs(VECTOR_STORE_PATH)
-    # Load or create Chroma vector store
     embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+    log_memory("after loading embeddings")
     if os.listdir(VECTOR_STORE_PATH):
-        # If vector store exists, load it
         vector_store = Chroma(persist_directory=VECTOR_STORE_PATH, embedding_function=embeddings)
+        log_memory("after loading existing vector_store")
     else:
-        # If not, create an empty one
         vector_store = Chroma.from_documents([], embeddings, persist_directory=VECTOR_STORE_PATH)
-    # Process each PDF one by one to avoid high memory usage
+        log_memory("after creating empty vector_store")
     processed_files = set()
-    # Try to keep track of already processed files (optional: store this info persistently)
     processed_marker = os.path.join(VECTOR_STORE_PATH, "processed_files.txt")
     if os.path.exists(processed_marker):
         with open(processed_marker, "r") as f:
@@ -65,20 +70,25 @@ def load_or_create_vector_store():
         for filename in new_files:
             loader = PyPDFLoader(os.path.join(DOCS_PATH, filename))
             try:
+                log_memory(f"before loading {filename}")
                 documents = loader.load()
+                log_memory(f"after loading {filename}")
                 docs = splitter.split_documents(documents)
+                log_memory(f"after splitting {filename}")
                 vector_store.add_documents(docs)
-                # Mark as processed
+                log_memory(f"after adding docs from {filename}")
                 with open(processed_marker, "a") as f:
                     f.write(filename + "\n")
-                # Free memory
                 del documents
                 del docs
                 gc.collect()
+                log_memory(f"after gc {filename}")
             except Exception as e:
                 print(f"Error processing {filename}: {e}")
         vector_store.persist()
+        log_memory("after persisting vector_store")
     _vector_store = vector_store
+    log_memory("end load_or_create_vector_store")
     return vector_store
 
 def call_ibm_watson_api(prompt: str) -> str:
