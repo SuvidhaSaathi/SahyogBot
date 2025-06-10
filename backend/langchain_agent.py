@@ -5,13 +5,14 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from langchain.vectorstores import Chroma
 import requests
+import gc
 
 load_dotenv()
 IBM_WATSON_API_KEY = os.getenv("IBM_WATSON_API_KEY")
 
 DOCS_PATH = "docs"
 VECTOR_STORE_PATH = "vector_store"
-CHUNK_SIZE = 1000
+CHUNK_SIZE = 500
 CHUNK_OVERLAP = 200
 
 IBM_WATSON_URL = "https://eu-de.ml.cloud.ibm.com/ml/v1/text/chat?version=2023-05-29"
@@ -40,18 +41,43 @@ def load_or_create_vector_store():
         return _vector_store
     if not os.path.exists(VECTOR_STORE_PATH):
         os.makedirs(VECTOR_STORE_PATH)
-    loaders = []
-    for filename in os.listdir(DOCS_PATH):
-        if filename.lower().endswith(".pdf"):
-            loaders.append(PyPDFLoader(os.path.join(DOCS_PATH, filename)))
-    documents = []
-    for loader in loaders:
-        documents.extend(loader.load())
-    splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
-    docs = splitter.split_documents(documents)
+    # Load or create Chroma vector store
     embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-    vector_store = Chroma.from_documents(docs, embeddings, persist_directory=VECTOR_STORE_PATH)
-    vector_store.persist()
+    if os.listdir(VECTOR_STORE_PATH):
+        # If vector store exists, load it
+        vector_store = Chroma(persist_directory=VECTOR_STORE_PATH, embedding_function=embeddings)
+    else:
+        # If not, create an empty one
+        vector_store = Chroma.from_documents([], embeddings, persist_directory=VECTOR_STORE_PATH)
+    # Process each PDF one by one to avoid high memory usage
+    processed_files = set()
+    # Try to keep track of already processed files (optional: store this info persistently)
+    processed_marker = os.path.join(VECTOR_STORE_PATH, "processed_files.txt")
+    if os.path.exists(processed_marker):
+        with open(processed_marker, "r") as f:
+            processed_files = set(line.strip() for line in f)
+    new_files = []
+    for filename in os.listdir(DOCS_PATH):
+        if filename.lower().endswith(".pdf") and filename not in processed_files:
+            new_files.append(filename)
+    if new_files:
+        splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
+        for filename in new_files:
+            loader = PyPDFLoader(os.path.join(DOCS_PATH, filename))
+            try:
+                documents = loader.load()
+                docs = splitter.split_documents(documents)
+                vector_store.add_documents(docs)
+                # Mark as processed
+                with open(processed_marker, "a") as f:
+                    f.write(filename + "\n")
+                # Free memory
+                del documents
+                del docs
+                gc.collect()
+            except Exception as e:
+                print(f"Error processing {filename}: {e}")
+        vector_store.persist()
     _vector_store = vector_store
     return vector_store
 
@@ -65,7 +91,7 @@ def call_ibm_watson_api(prompt: str) -> str:
     "You are SahyogBot, a helpful and polite AI assistant designed to guide Indian citizens—especially students, women, and rural families—through government schemes, scholarships, and financial aid.\n\n"
     "🧠 Use the provided 'Context' to answer any scheme-related question.\n"
     "🔁 If the context does not contain relevant information, respond with: 'No matching information found in database. I will now search the internet.' and stop.\n"
-    "The user’s query will be followed by: \nContext: [retrieved content]\n\nQuestion: [user question]\n\nAnswer:\n"
+    "The user's query will be followed by: \nContext: [retrieved content]\n\nQuestion: [user question]\n\nAnswer:\n"
     "If context is present, answer like this:\n\n"
     "🎯 Relevant Government Schemes:\n"
     "• [Scheme Name] - [Brief Description]\n"
